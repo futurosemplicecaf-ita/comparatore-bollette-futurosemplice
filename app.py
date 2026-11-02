@@ -513,7 +513,7 @@ if ha_dati_utili:
         if ha_gas:
             dettaglio_offerte_wa += f"\n- Gas: {scelta_offerta_gas}"
 
-        testo_wa = f"Salve, sono {nome_visualizzato}. Ho effettuato un'analisi per {tipo_utenza_str} con un bilancio stimato di {risparmio_totale:+.2f} €/anno.{dettaglio_offerte_wa}\n\nVorrei bloccare il prezzo e procedere."
+        testo_wa = f"Salve, sono {nome_visualizzato}. Ho effettuato un'analisi per {tipo_utenza_str} con un risparmio stimato di {risparmio_totale:+.2f} €/anno.{dettaglio_offerte_wa}\n\nVorrei bloccare il prezzo e procedere."
         link_wa = f"https://wa.me/393311776713?text={urllib.parse.quote(testo_wa)}"
         st.markdown(f"""
             <a href="{link_wa}" target="_blank">
