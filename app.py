@@ -126,7 +126,7 @@ OFFERTE_CATALOGO = {
         },
         "Luce - SORGENIA FISSO PER TE (Fino al 31/12/2029)": {
             "quota_fissa": 216.0,
-            "materia_prima": 0.1850,
+            "materia_prima": 0.185,
             "ha_oneri_recesso": True,
             "durata": "Prezzo fisso valido fino al 31/12/2029"
         },
@@ -506,7 +506,14 @@ if ha_dati_utili:
         )
 
     with col_wa:
-        testo_wa = f"Salve, sono {nome_visualizzato}. Ho effettuato un'analisi per {tipo_utenza_str} con un bilancio stimato di {risparmio_totale:+.2f} €/anno. Vorrei bloccare il prezzo e procedere."
+        # Messaggio WhatsApp aggiornato con il dettaglio delle offerte scelte
+        dettaglio_offerte_wa = ""
+        if ha_luce:
+            dettaglio_offerte_wa += f"\n- Luce: {scelta_offerta_luce}"
+        if ha_gas:
+            dettaglio_offerte_wa += f"\n- Gas: {scelta_offerta_gas}"
+
+        testo_wa = f"Salve, sono {nome_visualizzato}. Ho effettuato un'analisi per {tipo_utenza_str} con un bilancio stimato di {risparmio_totale:+.2f} €/anno.{dettaglio_offerte_wa}\n\nVorrei bloccare il prezzo e procedere."
         link_wa = f"https://wa.me/393311776713?text={urllib.parse.quote(testo_wa)}"
         st.markdown(f"""
             <a href="{link_wa}" target="_blank">
