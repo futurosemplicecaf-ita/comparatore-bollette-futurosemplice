@@ -126,7 +126,7 @@ OFFERTE_CATALOGO = {
         },
         "Luce - SORGENIA FISSO PER TE (Fino al 31/12/2029)": {
             "quota_fissa": 216.0,
-            "materia_prima": 0.1826,
+            "materia_prima": 0.1850,
             "ha_oneri_recesso": True,
             "durata": "Prezzo fisso valido fino al 31/12/2029"
         },
