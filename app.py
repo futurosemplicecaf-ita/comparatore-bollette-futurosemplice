@@ -135,7 +135,14 @@ OFFERTE_CATALOGO = {
             "materia_prima": 0.942,
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso valido fino al 31/12/2027"
+        },
+        "Gas - NEXT e-BUSINESS VENTIQUATTRO GAS (Fino al 31/12/2028)": {
+            "quota_fissa": 79.20,
+            "materia_prima": 0.91,
+            "ha_oneri_recesso": False,
+            "durata": "Prezzo fisso valido fino al 31/12/2028"
         }
+
     }
 }
 
