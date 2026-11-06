@@ -127,7 +127,7 @@ OFFERTE_CATALOGO = {
     "Business": {
         "Luce - IREN TUA AZIENDA LUCE FISSO (Fino al 31/12/2027)": {
             "quota_fissa": 180.0,
-            "materia_prima": 0.0,234912 ,
+            "materia_prima": 0.234912 ,
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso valido fino al 31/12/2027"
         },
