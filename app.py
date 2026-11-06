@@ -88,7 +88,7 @@ OFFERTE_CATALOGO = {
         },
         "Luce - SORGENIA NEXT ENERGY VENTIQUATTRO (Prezzo Fisso 24 Mesi)": {
             "quota_fissa": 156.0,
-            "materia_prima": 0.1768,
+            "materia_prima": 0.1846,
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso garantito per i primi 24 mesi"
         },
