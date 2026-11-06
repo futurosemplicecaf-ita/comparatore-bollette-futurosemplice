@@ -115,7 +115,7 @@ OFFERTE_CATALOGO = {
             "materia_prima": 0.845,
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso valido fino al 31/12/2028"
-        }
+        
         },
         "Gas - SORGENIANEXT ENERGY VENTIQUATTRO/GAS (Fino al 31/12/2028)": {
             "quota_fissa": 156.0,
