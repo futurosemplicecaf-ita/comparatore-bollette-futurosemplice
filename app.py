@@ -127,13 +127,31 @@ OFFERTE_CATALOGO = {
     "Business": {
         "Luce - IREN TUA AZIENDA LUCE FISSO (Fino al 31/12/2027)": {
             "quota_fissa": 180.0,
-            "materia_prima": 0.234912 ,
+            "materia_prima": 0.234912,
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso valido fino al 31/12/2027"
         },
-        "Luce - SORGENIA FISSO PER TE (Fino al 31/12/2029)": {
-            "quota_fissa": 216.0,
+        "Luce - SORGENIA FISSO PER TE L1 LIGHT": {
+            "quota_fissa": 120.0,
             "materia_prima": 0.185,
+            "ha_oneri_recesso": True,
+            "durata": "Prezzo fisso valido fino al 31/12/2029"
+        },
+        "Luce - SORGENIA FISSO PER TE L2 LIGHT PLUS": {
+            "quota_fissa": 120.0,
+            "materia_prima": 0.182,
+            "ha_oneri_recesso": True,
+            "durata": "Prezzo fisso valido fino al 31/12/2029"
+        },
+        "Luce - SORGENIA FISSO PER TE L4 PREMIUM": {
+            "quota_fissa": 120.0,
+            "materia_prima": 0.179,
+            "ha_oneri_recesso": True,
+            "durata": "Prezzo fisso valido fino al 31/12/2029"
+        },
+        "Luce - SORGENIA FISSO PER TE L6 CORPORATE PREMIUM": {
+            "quota_fissa": 120.0,
+            "materia_prima": 0.176,
             "ha_oneri_recesso": True,
             "durata": "Prezzo fisso valido fino al 31/12/2029"
         },
@@ -143,12 +161,31 @@ OFFERTE_CATALOGO = {
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso valido fino al 31/12/2027"
         },
-        "Gas - NEXT e-BUSINESS VENTIQUATTRO GAS (Fino al 31/12/2028)": {
+        "Gas - IMPRESA GAS SMART FIX LIGHT": {
             "quota_fissa": 79.20,
-            "materia_prima": 0.91,
+            "materia_prima": 0.999,
             "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso valido fino al 31/12/2028"
+            "durata": "Prezzo fisso garantito per 12 mesi"
+        },
+        "Gas - IMPRESA GAS SMART FIX PLUS": {
+            "quota_fissa": 79.20,
+            "materia_prima": 0.979,
+            "ha_oneri_recesso": False,
+            "durata": "Prezzo fisso garantito per 12 mesi"
+        },
+        "Gas - NEXT e-BUSINESS VENTIQUATTRO GAS L1 LIGHT": {
+            "quota_fissa": 79.20,
+            "materia_prima": 0.849,
+            "ha_oneri_recesso": False,
+            "durata": "Prezzo fisso garantito per 24 mesi"
+        },
+        "Gas - NEXT e-BUSINESS VENTIQUATTRO GAS L3 PLUS": {
+            "quota_fissa": 79.20,
+            "materia_prima": 0.829,
+            "ha_oneri_recesso": False,
+            "durata": "Prezzo fisso garantito per 24 mesi"
         }
+    }
 
     }
 }
