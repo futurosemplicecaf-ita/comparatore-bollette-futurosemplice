@@ -185,7 +185,7 @@ OFFERTE_CATALOGO = {
             "ha_oneri_recesso": False,
             "durata": "Prezzo fisso garantito per 24 mesi"
         }
-    }
+   
 
     }
 }
