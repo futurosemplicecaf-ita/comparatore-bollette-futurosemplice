@@ -79,10 +79,10 @@ def carica_offerte_excel():
 OFFERTE_CATALOGO = carica_offerte_excel()
 
 # =========================================================================
-# INIZIALIZZAZIONE SESSION STATE
+# INIZIALIZZAZIONE SESSION STATE & CONTATORE RESET
 # =========================================================================
-if "segmento" not in st.session_state:
-    st.session_state.segmento = "Casa (Residenziale)"
+if "reset_counter" not in st.session_state:
+    st.session_state.reset_counter = 0
 
 # --- FUNZIONE PER GENERARE IL PDF CON IL LOGO ---
 def genera_pdf_preventivo(nome_cliente, dati_riepilogo, testo_contatti, titolo_doc, tipo_cliente):
@@ -179,13 +179,15 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# Usiamo un suffisso dinamico basato sul reset_counter per resettare anche il radio principale
+rc = st.session_state.reset_counter
+
 segmento_opzioni = ["Casa (Residenziale)", "Business (Partita IVA)"]
 segmento_scelto = st.radio(
     "🎯 Seleziona la tipologia di utenza:",
     segmento_opzioni,
-    index=segmento_opzioni.index(st.session_state.segmento) if st.session_state.segmento in segmento_opzioni else 0,
     horizontal=True,
-    key="segmento"
+    key=f"segmento_{rc}"
 )
 
 is_business = "Business" in segmento_scelto
@@ -195,12 +197,12 @@ st.markdown("### 📋 I tuoi dati di riferimento")
 if is_business:
     col_a1, col_a2 = st.columns(2)
     with col_a1:
-        client_name = st.text_input("Ragione Sociale", placeholder="Es. Rossi Srl", key="client_name")
+        client_name = st.text_input("Ragione Sociale", placeholder="Es. Rossi Srl", key=f"client_name_{rc}")
     with col_a2:
-        client_piva = st.text_input("Partita IVA", placeholder="Es. 01234567890", key="client_piva")
+        client_piva = st.text_input("Partita IVA", placeholder="Es. 01234567890", key=f"client_piva_{rc}")
     nome_visualizzato = f"{client_name} (P.IVA: {client_piva})" if client_name and client_piva else (client_name if client_name else "[Azienda Cliente]")
 else:
-    client_name = st.text_input("Nome e Cognome", placeholder="Es. Mario Rossi", key="client_name_res")
+    client_name = st.text_input("Nome e Cognome", placeholder="Es. Mario Rossi", key=f"client_name_res_{rc}")
     nome_visualizzato = client_name if client_name else "[Nome Cliente]"
 
 st.markdown("---")
@@ -219,7 +221,6 @@ with tab_luce:
     with col_l1:
         st.markdown("#### 📄 Dati della tua Bolletta Luce")
         
-        # Box in evidenza per la scelta della modalità
         st.markdown("""
             <div style="background-color: #f1f5f9; padding: 12px; border-radius: 10px; border-left: 4px solid #0091DA; margin-bottom: 12px;">
                 <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 13px;">1️⃣ Scegli la modalità di inserimento:</p>
@@ -229,17 +230,17 @@ with tab_luce:
         modo_calcolo_luce = st.radio(
             "Modalità di inserimento consumo Luce:",
             ["Consumo Annuo (Ultimi 12 mesi)", "Singola Bolletta (Periodo)"],
-            key="modo_luce",
+            key=f"modo_luce_{rc}",
             label_visibility="collapsed"
         )
         
         if modo_calcolo_luce == "Singola Bolletta (Periodo)":
-            periodo_luce = st.selectbox("A che periodo si riferisce la bolletta?", ["1 Mese", "2 Mesi (Bimestrale)"], key="per_luce")
+            periodo_luce = st.selectbox("A che periodo si riferisce la bolletta?", ["1 Mese", "2 Mesi (Bimestrale)"], key=f"per_luce_{rc}")
             fattore_moltiplicativo_luce = 12.0 if periodo_luce == "1 Mese" else 6.0
         else:
             fattore_moltiplicativo_luce = 1.0
             
-        consumo_input_luce = st.number_input("Consumo Luce (kWh)", step=100.0, key="l_cons_in", help="Somma totale (F1 + F2 + F3).")
+        consumo_input_luce = st.number_input("Consumo Luce (kWh)", step=100.0, key=f"l_cons_in_{rc}", help="Somma totale (F1 + F2 + F3).")
         luce_consumo = consumo_input_luce * fattore_moltiplicativo_luce
         if fattore_moltiplicativo_luce > 1.0:
             st.caption(f"🔄 Consumo stimato su base annua: **{luce_consumo:,.0f} kWh/anno**")
@@ -252,15 +253,15 @@ with tab_luce:
             st.markdown("💶 **Quota Fissa (Annua)**")
             st.caption("💡 Inserisci il totale della quota fissa su base annua.")
 
-        luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="l_cf_in")
+        luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key=f"l_cf_in_{rc}")
         luce_curr_fixed = luce_curr_fixed_input * 12.0 if modo_calcolo_luce == "Singola Bolletta (Periodo)" else luce_curr_fixed_input
         
-        luce_curr_var = st.number_input("Costo Materia Prima Attuale (€/kWh)", format="%.4f", key="l_cv_curr")
+        luce_curr_var = st.number_input("Costo Materia Prima Attuale (€/kWh)", format="%.4f", key=f"l_cv_curr_{rc}")
         
     with col_l2:
         st.markdown(f"#### ⚡ Offerta Futuro Semplice")
         if offerte_luce_disponibili:
-            scelta_offerta_luce = st.selectbox("Seleziona l'offerta da confrontare", offerte_luce_disponibili, key="sel_luce")
+            scelta_offerta_luce = st.selectbox("Seleziona l'offerta da confrontare", offerte_luce_disponibili, key=f"sel_luce_{rc}")
             
             luce_offer_fixed = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["quota_fissa_annua"]
             luce_offer_var = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["materia_prima"]
@@ -309,7 +310,6 @@ with tab_gas:
     with col_g1:
         st.markdown("#### 📄 Dati della tua Bolletta Gas")
         if offerte_gas_disponibili:
-            # Box in evidenza per la scelta della modalità Gas
             st.markdown("""
                 <div style="background-color: #f1f5f9; padding: 12px; border-radius: 10px; border-left: 4px solid #0091DA; margin-bottom: 12px;">
                     <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 13px;">1️⃣ Scegli la modalità di inserimento:</p>
@@ -319,16 +319,16 @@ with tab_gas:
             modo_calcolo_gas = st.radio(
                 "Modalità di inserimento consumo Gas:",
                 ["Consumo Annuo (Ultimi 12 mesi)", "Singola Bolletta (Periodo)"],
-                key="modo_gas",
+                key=f"modo_gas_{rc}",
                 label_visibility="collapsed"
             )
             if modo_calcolo_gas == "Singola Bolletta (Periodo)":
-                periodo_gas = st.selectbox("A che periodo si riferisce la bolletta?", ["1 Mese", "2 Mesi (Bimestrale)"], key="per_gas")
+                periodo_gas = st.selectbox("A che periodo si riferisce la bolletta?", ["1 Mese", "2 Mesi (Bimestrale)"], key=f"per_gas_{rc}")
                 fattore_moltiplicativo_gas = 12.0 if periodo_gas == "1 Mese" else 6.0
             else:
                 fattore_moltiplicativo_gas = 1.0
                 
-            consumo_input_gas = st.number_input("Consumo Gas (Smc)", step=50.0, key="g_cons_in")
+            consumo_input_gas = st.number_input("Consumo Gas (Smc)", step=50.0, key=f"g_cons_in_{rc}")
             gas_consumo = consumo_input_gas * fattore_moltiplicativo_gas
             if fattore_moltiplicativo_gas > 1.0:
                 st.caption(f"🔄 Consumo stimato su base annua: **{gas_consumo:,.0f} Smc/anno**")
@@ -341,10 +341,10 @@ with tab_gas:
                 st.markdown("💶 **Quota Fissa (Annua)**")
                 st.caption("💡 Inserisci il totale della quota fissa su base annua.")
 
-            gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="g_cf_in")
+            gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key=f"g_cf_in_{rc}")
             gas_curr_fixed = gas_curr_fixed_input * 12.0 if modo_calcolo_gas == "Singola Bolletta (Periodo)" else gas_curr_fixed_input
             
-            gas_curr_var = st.number_input("Costo Materia Prima Attuale (€/Smc)", format="%.3f", key="g_cv_curr")
+            gas_curr_var = st.number_input("Costo Materia Prima Attuale (€/Smc)", format="%.3f", key=f"g_cv_curr_{rc}")
         else:
             gas_consumo = 0.0
             gas_curr_fixed = 0.0
@@ -356,7 +356,7 @@ with tab_gas:
     with col_g2:
         st.markdown(f"#### 🔥 Offerta Futuro Semplice")
         if offerte_gas_disponibili:
-            scelta_offerta_gas = st.selectbox("Seleziona l'offerta da confrontare", offerte_gas_disponibili, key="sel_gas")
+            scelta_offerta_gas = st.selectbox("Seleziona l'offerta da confrontare", offerte_gas_disponibili, key=f"sel_gas_{rc}")
             gas_offer_fixed = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["quota_fissa_annua"]
             gas_offer_var = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["materia_prima"]
             gas_durata_str = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["durata"]
@@ -498,8 +498,7 @@ if ha_dati_utili:
 
     with col_reset:
         if st.button("🔄 Reset"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+            st.session_state.reset_counter += 1
             st.rerun()
 
     with col_esci:
@@ -512,8 +511,7 @@ else:
     col_res, col_esc = st.columns([1, 1])
     with col_res:
         if st.button("🔄 Reset Campi"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+            st.session_state.reset_counter += 1
             st.rerun()
     with col_esc:
         st.markdown(
