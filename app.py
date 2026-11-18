@@ -83,30 +83,6 @@ OFFERTE_CATALOGO = carica_offerte_excel()
 # =========================================================================
 if "segmento" not in st.session_state:
     st.session_state.segmento = "Casa (Residenziale)"
-if "client_name" not in st.session_state:
-    st.session_state.client_name = ""
-if "client_piva" not in st.session_state:
-    st.session_state.client_piva = ""
-if "modo_luce" not in st.session_state:
-    st.session_state.modo_luce = "Consumo Annuo (Ultimi 12 mesi)"
-if "per_luce" not in st.session_state:
-    st.session_state.per_luce = "1 Mese"
-if "l_cons_in" not in st.session_state:
-    st.session_state.l_cons_in = 0.0
-if "l_cf_in" not in st.session_state:
-    st.session_state.l_cf_in = 0.0
-if "l_cv_curr" not in st.session_state:
-    st.session_state.l_cv_curr = 0.0
-if "modo_gas" not in st.session_state:
-    st.session_state.modo_gas = "Consumo Annuo (Ultimi 12 mesi)"
-if "per_gas" not in st.session_state:
-    st.session_state.per_gas = "1 Mese"
-if "g_cons_in" not in st.session_state:
-    st.session_state.g_cons_in = 0.0
-if "g_cf_in" not in st.session_state:
-    st.session_state.g_cf_in = 0.0
-if "g_cv_curr" not in st.session_state:
-    st.session_state.g_cv_curr = 0.0
 
 # --- FUNZIONE PER GENERARE IL PDF CON IL LOGO ---
 def genera_pdf_preventivo(nome_cliente, dati_riepilogo, testo_contatti, titolo_doc, tipo_cliente):
@@ -522,14 +498,8 @@ if ha_dati_utili:
 
     with col_reset:
         if st.button("🔄 Reset"):
-            st.session_state.client_name = ""
-            st.session_state.client_piva = ""
-            st.session_state.l_cons_in = 0.0
-            st.session_state.l_cf_in = 0.0
-            st.session_state.l_cv_curr = 0.0
-            st.session_state.g_cons_in = 0.0
-            st.session_state.g_cf_in = 0.0
-            st.session_state.g_cv_curr = 0.0
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
             st.rerun()
 
     with col_esci:
@@ -542,14 +512,8 @@ else:
     col_res, col_esc = st.columns([1, 1])
     with col_res:
         if st.button("🔄 Reset Campi"):
-            st.session_state.client_name = ""
-            st.session_state.client_piva = ""
-            st.session_state.l_cons_in = 0.0
-            st.session_state.l_cf_in = 0.0
-            st.session_state.l_cv_curr = 0.0
-            st.session_state.g_cons_in = 0.0
-            st.session_state.g_cf_in = 0.0
-            st.session_state.g_cv_curr = 0.0
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
             st.rerun()
     with col_esc:
         st.markdown(
