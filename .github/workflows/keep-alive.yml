@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Ping Streamlit App
         run: |
-          # Indirizzo della tua app Streamlit
           APP_URL="https://comparatore-bollette-futurosemplice-92ffj8el3bxenpzlx2tre2.streamlit.app/"
           
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL")
           echo "HTTP Status Received: $HTTP_STATUS"
           
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 302 ]; then
+          # Aggiunto il codice 303 tra quelli considerati corretti
+          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 302 ] || [ "$HTTP_STATUS" -eq 303 ]; then
             echo "App reached successfully!"
           else
             echo "Warning: Received HTTP status $HTTP_STATUS"
