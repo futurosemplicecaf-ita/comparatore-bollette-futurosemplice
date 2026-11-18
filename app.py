@@ -167,7 +167,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("💡 **Come funziona:**")
     st.markdown("1. Scegli se sei Casa o Business.")
-    st.markdown("2. Seleziona la modalità di inserimento e compila i dati.")
+    st.markdown("2. Inserisci i dati della singola bolletta (mensile o bimestrale).")
     st.markdown("3. Scopri l'analisi, scarica il PDF o contattaci su WhatsApp.")
 
 # --- HERO BANNER ---
@@ -175,11 +175,10 @@ st.markdown("""
     <div class="hero-banner">
         <span style="background-color: #8ED704; color: #111827; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase;">⚡ Tariffa Bloccata 2026</span>
         <h1 style="margin-top: 10px; margin-bottom: 5px; color: white; font-size: 26px;">Analizza i tuoi Consumi</h1>
-        <p style="font-size: 14px; margin: 0; color: #e0f2fe;">Inserisci i dati della tua bolletta e scopri subito i vantaggi delle nostre offerte a prezzo fisso.</p>
+        <p style="font-size: 14px; margin: 0; color: #e0f2fe;">Inserisci i dati della bolletta (mensile o bimestrale) e scopri subito i vantaggi delle nostre offerte.</p>
     </div>
 """, unsafe_allow_html=True)
 
-# Usiamo un suffisso dinamico basato sul reset_counter per resettare anche il radio principale
 rc = st.session_state.reset_counter
 
 segmento_opzioni = ["Casa (Residenziale)", "Business (Partita IVA)"]
@@ -227,9 +226,10 @@ with tab_luce:
             </div>
         """, unsafe_allow_html=True)
         
+        # INVERSIONE: Mettiamo "Singola Bolletta (Periodo)" come primo elemento (indice 0 di default)
         modo_calcolo_luce = st.radio(
             "Modalità di inserimento consumo Luce:",
-            ["Consumo Annuo (Ultimi 12 mesi)", "Singola Bolletta (Periodo)"],
+            ["Singola Bolletta (Periodo)", "Consumo Annuo (Ultimi 12 mesi)"],
             key=f"modo_luce_{rc}",
             label_visibility="collapsed"
         )
@@ -240,21 +240,26 @@ with tab_luce:
         else:
             fattore_moltiplicativo_luce = 1.0
             
-        consumo_input_luce = st.number_input("Consumo Luce (kWh)", step=100.0, key=f"l_cons_in_{rc}", help="Somma totale (F1 + F2 + F3).")
+        consumo_input_luce = st.number_input("Consumo Luce (kWh)", step=100.0, key=f"l_cons_in_{rc}", help="Somma totale (F1 + F2 + F3) letta nella bolletta.")
         luce_consumo = consumo_input_luce * fattore_moltiplicativo_luce
         if fattore_moltiplicativo_luce > 1.0:
-            st.caption(f"🔄 Consumo stimato su base annua: **{luce_consumo:,.0f} kWh/anno**")
+            st.caption(f"🔄 Consumo rapportato su base annua: **{luce_consumo:,.0f} kWh/anno**")
         
         st.markdown("---")
         if modo_calcolo_luce == "Singola Bolletta (Periodo)":
             st.markdown(f"💶 **Quota Fissa ({'Mensile' if periodo_luce == '1 Mese' else 'Bimestrale'})**")
-            st.caption(f"💡 Inserisci l'importo fisso così come lo leggi nella bolletta {'mensile' if periodo_luce == '1 Mese' else 'bimestrale'}. L'app lo trasformerà in totale annuo.")
+            st.caption(f"💡 Inserisci la quota fissa così come la leggi nella bolletta {'mensile' if periodo_luce == '1 Mese' else 'bimestrale'}. L'app la convertirà automaticamente in totale annuo.")
         else:
             st.markdown("💶 **Quota Fissa (Annua)**")
             st.caption("💡 Inserisci il totale della quota fissa su base annua.")
 
         luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key=f"l_cf_in_{rc}")
-        luce_curr_fixed = luce_curr_fixed_input * 12.0 if modo_calcolo_luce == "Singola Bolletta (Periodo)" else luce_curr_fixed_input
+        
+        # CALCOLO SICURO DELLA QUOTA FISSA ANNUA
+        if modo_calcolo_luce == "Singola Bolletta (Periodo)":
+            luce_curr_fixed = luce_curr_fixed_input * fattore_moltiplicativo_luce
+        else:
+            luce_curr_fixed = luce_curr_fixed_input
         
         luce_curr_var = st.number_input("Costo Materia Prima Attuale (€/kWh)", format="%.4f", key=f"l_cv_curr_{rc}")
         
@@ -316,9 +321,10 @@ with tab_gas:
                 </div>
             """, unsafe_allow_html=True)
             
+            # INVERSIONE: Anche qui mettiamo la bolletta periodica come prima scelta
             modo_calcolo_gas = st.radio(
                 "Modalità di inserimento consumo Gas:",
-                ["Consumo Annuo (Ultimi 12 mesi)", "Singola Bolletta (Periodo)"],
+                ["Singola Bolletta (Periodo)", "Consumo Annuo (Ultimi 12 mesi)"],
                 key=f"modo_gas_{rc}",
                 label_visibility="collapsed"
             )
@@ -331,7 +337,7 @@ with tab_gas:
             consumo_input_gas = st.number_input("Consumo Gas (Smc)", step=50.0, key=f"g_cons_in_{rc}")
             gas_consumo = consumo_input_gas * fattore_moltiplicativo_gas
             if fattore_moltiplicativo_gas > 1.0:
-                st.caption(f"🔄 Consumo stimato su base annua: **{gas_consumo:,.0f} Smc/anno**")
+                st.caption(f"🔄 Consumo rapportato su base annua: **{gas_consumo:,.0f} Smc/anno**")
             
             st.markdown("---")
             if modo_calcolo_gas == "Singola Bolletta (Periodo)":
@@ -342,7 +348,12 @@ with tab_gas:
                 st.caption("💡 Inserisci il totale della quota fissa su base annua.")
 
             gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key=f"g_cf_in_{rc}")
-            gas_curr_fixed = gas_curr_fixed_input * 12.0 if modo_calcolo_gas == "Singola Bolletta (Periodo)" else gas_curr_fixed_input
+            
+            # CALCOLO SICURO DELLA QUOTA FISSA ANNUA GAS
+            if modo_calcolo_gas == "Singola Bolletta (Periodo)":
+                gas_curr_fixed = gas_curr_fixed_input * fattore_moltiplicativo_gas
+            else:
+                gas_curr_fixed = gas_curr_fixed_input
             
             gas_curr_var = st.number_input("Costo Materia Prima Attuale (€/Smc)", format="%.3f", key=f"g_cv_curr_{rc}")
         else:
@@ -515,6 +526,6 @@ else:
             st.rerun()
     with col_esc:
         st.markdown(
-            '<a href="https://futurosemplicecaf.altervista.org/" target="_self"><button style="width:100%; background-color:#ef4444; color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer;">🚪 Esci</button></a>',
+            '<a href="https://futurosemplicecaf.altervista.org/" target="_self"><button style="width:100% background-color:#ef4444; color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer;">🚪 Esci</button></a>',
             unsafe_allow_html=True
         )
