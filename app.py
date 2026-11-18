@@ -2,6 +2,7 @@ import io
 import os
 import urllib.parse
 import streamlit as st
+import pandas as pd
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -44,6 +45,40 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================================
+# CARICAMENTO OFFERTE DA FILE EXCEL
+# =========================================================================
+@st.cache_data(ttl=60)
+def carica_offerte_excel():
+    excel_path = "offerte_energia.xlsx"
+    if not os.path.exists(excel_path):
+        # Se il file non esiste, creiamo un Excel di esempio in automatico per evitare crash
+        df_default = pd.DataFrame([
+            {"Segmento": "Residenziale", "Tipo": "Luce", "NomeOfferta": "Luce - SEV SUPER LUCE FIX", "QuotaFissaMensile": 12.99, "MateriaPrima": 0.178, "HaOneriRecesso": "NO", "Durata": "Prezzo fisso garantito per 24 mesi"},
+            {"Segmento": "Residenziale", "Tipo": "Gas", "NomeOfferta": "Gas - SEV SUPER GAS FIX", "QuotaFissaMensile": 12.00, "MateriaPrima": 0.820, "HaOneriRecesso": "NO", "Durata": "Prezzo fisso garantito per 24 mesi"},
+            {"Segmento": "Business", "Tipo": "Luce", "NomeOfferta": "Luce - IREN TUA AZIENDA LUCE", "QuotaFissaMensile": 15.00, "MateriaPrima": 0.2349, "HaOneriRecesso": "NO", "Durata": "Prezzo fisso valido fino al 31/12/2027"},
+            {"Segmento": "Business", "Tipo": "Gas", "NomeOfferta": "Gas - IREN TUA AZIENDA GAS", "QuotaFissaMensile": 15.00, "MateriaPrima": 0.957, "HaOneriRecesso": "NO", "Durata": "Prezzo fisso valido fino al 31/12/2027"}
+        ])
+        df_default.to_excel(excel_path, index=False)
+    
+    df = pd.read_excel(excel_path)
+    
+    # Convertiamo in un dizionario strutturato simile al precedente
+    catalogo = {"Residenziale": {}, "Business": {}}
+    for _, row in df.iterrows():
+        seg = row["Segmento"]
+        nome_completo = f"{row['Tipo']} - {row['NomeOfferta']}" if not row['NomeOfferta'].startswith(row['Tipo']) else row['NomeOfferta']
+        if seg in catalogo:
+            catalogo[seg][nome_completo] = {
+                "quota_fissa_annua": float(row["QuotaFissaMensile"]) * 12, # Convertiamo la quota mensile inserita in Excel in base annua
+                "materia_prima": float(row["MateriaPrima"]),
+                "ha_oneri_recesso": str(row["HaOneriRecesso"]).strip().upper() == "SI",
+                "durata": str(row["Durata"])
+            }
+    return catalogo
+
+OFFERTE_CATALOGO = carica_offerte_excel()
+
+# =========================================================================
 # INIZIALIZZAZIONE SESSION STATE
 # =========================================================================
 if "segmento" not in st.session_state:
@@ -52,143 +87,14 @@ if "client_name" not in st.session_state:
     st.session_state.client_name = ""
 if "client_piva" not in st.session_state:
     st.session_state.client_piva = ""
-if "client_name_res" not in st.session_state:
-    st.session_state.client_name_res = ""
 if "modo_luce" not in st.session_state:
     st.session_state.modo_luce = "Consumo Annuo (Ultimi 12 mesi)"
 if "per_luce" not in st.session_state:
     st.session_state.per_luce = "1 Mese"
-if "l_cons_in" not in st.session_state:
-    st.session_state.l_cons_in = 0.0
-if "l_cf_in" not in st.session_state:
-    st.session_state.l_cf_in = 0.0
-if "l_cv_curr" not in st.session_state:
-    st.session_state.l_cv_curr = 0.000
 if "modo_gas" not in st.session_state:
     st.session_state.modo_gas = "Consumo Annuo (Ultimi 12 mesi)"
 if "per_gas" not in st.session_state:
     st.session_state.per_gas = "1 Mese"
-if "g_cons_in" not in st.session_state:
-    st.session_state.g_cons_in = 0.0
-if "g_cf_in" not in st.session_state:
-    st.session_state.g_cf_in = 0.0
-if "g_cv_curr" not in st.session_state:
-    st.session_state.g_cv_curr = 0.000
-
-# =========================================================================
-# CATALOGO OFFERTE UFFICIALI
-# =========================================================================
-OFFERTE_CATALOGO = {
-    "Residenziale": {
-        "Luce - SEV SUPER LUCE FIX (Prezzo Fisso 24 Mesi)": {
-            "quota_fissa": 155.88,
-            "materia_prima": 0.178,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per 24 mesi"
-        },
-        "Luce - SORGENIA NEXT ENERGY VENTIQUATTRO (Prezzo Fisso 24 Mesi)": {
-            "quota_fissa": 156.0,
-            "materia_prima": 0.1846,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per i primi 24 mesi"
-        },
-        "Luce - IREN LOCK&FIX (Fino al 31/12/2029 + Oneri Recesso)": {
-            "quota_fissa": 147.0,
-            "materia_prima": 0.155,
-            "ha_oneri_recesso": True,
-            "durata": "Prezzo fisso valido fino al 31/12/2029"
-        },
-        "Luce - IREN SOTTOCASA LUCE NEW (Fino al 31/12/2028)": {
-            "quota_fissa": 159.0,
-            "materia_prima": 0.1793,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso valido fino al 31/12/2028"
-        },
-        "Gas - SEV SUPER GAS FIX (Prezzo Fisso 24 Mesi)": {
-            "quota_fissa": 144.0,
-            "materia_prima": 0.82,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per 24 mesi"
-        },
-        "Gas - IREN SOTTOCASA GAS NEW (Fino al 31/12/2028)": {
-            "quota_fissa": 156.0,
-            "materia_prima": 0.845,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso valido fino al 31/12/2028"
-        
-        },
-        "Gas - SORGENIANEXT ENERGY VENTIQUATTRO/GAS (Fino al 31/12/2028)": {
-            "quota_fissa": 156.0,
-            "materia_prima": 0.7933,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso valido fino al 31/12/2028"
-        }
-    },
-    "Business": {
-        "Luce - IREN TUA AZIENDA LUCE FISSO (Fino al 31/12/2027)": {
-            "quota_fissa": 180.0,
-            "materia_prima": 0.234912,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso valido fino al 31/12/2027"
-        },
-        "Luce - SORGENIA FISSO PER TE L1 LIGHT": {
-            "quota_fissa": 120.0,
-            "materia_prima": 0.185,
-            "ha_oneri_recesso": True,
-            "durata": "Prezzo fisso valido fino al 31/12/2029"
-        },
-        "Luce - SORGENIA FISSO PER TE L2 LIGHT PLUS": {
-            "quota_fissa": 120.0,
-            "materia_prima": 0.182,
-            "ha_oneri_recesso": True,
-            "durata": "Prezzo fisso valido fino al 31/12/2029"
-        },
-        "Luce - SORGENIA FISSO PER TE L4 PREMIUM": {
-            "quota_fissa": 120.0,
-            "materia_prima": 0.179,
-            "ha_oneri_recesso": True,
-            "durata": "Prezzo fisso valido fino al 31/12/2029"
-        },
-        "Luce - SORGENIA FISSO PER TE L6 CORPORATE PREMIUM": {
-            "quota_fissa": 120.0,
-            "materia_prima": 0.176,
-            "ha_oneri_recesso": True,
-            "durata": "Prezzo fisso valido fino al 31/12/2029"
-        },
-        "Gas - IREN TUA AZIENDA GAS FISSO (Fino al 31/12/2027)": {
-            "quota_fissa": 180.0,
-            "materia_prima": 0.957,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso valido fino al 31/12/2027"
-        },
-        "Gas - IMPRESA GAS SMART FIX LIGHT": {
-            "quota_fissa": 79.20,
-            "materia_prima": 0.999,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per 12 mesi"
-        },
-        "Gas - IMPRESA GAS SMART FIX PLUS": {
-            "quota_fissa": 79.20,
-            "materia_prima": 0.979,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per 12 mesi"
-        },
-        "Gas - NEXT e-BUSINESS VENTIQUATTRO GAS L1 LIGHT": {
-            "quota_fissa": 79.20,
-            "materia_prima": 0.849,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per 24 mesi"
-        },
-        "Gas - NEXT e-BUSINESS VENTIQUATTRO GAS L3 PLUS": {
-            "quota_fissa": 79.20,
-            "materia_prima": 0.829,
-            "ha_oneri_recesso": False,
-            "durata": "Prezzo fisso garantito per 24 mesi"
-        }
-   
-
-    }
-}
 
 # --- FUNZIONE PER GENERARE IL PDF CON IL LOGO ---
 def genera_pdf_preventivo(nome_cliente, dati_riepilogo, testo_contatti, titolo_doc, tipo_cliente):
@@ -273,7 +179,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("💡 **Come funziona:**")
     st.markdown("1. Scegli se sei Casa o Business.")
-    st.markdown("2. Inserisci i dati della tua bolletta.")
+    st.markdown("2. Inserisci i dati della bolletta (quota fissa mensile).")
     st.markdown("3. Scopri l'analisi, scarica il PDF o contattaci su WhatsApp.")
 
 # --- HERO BANNER ---
@@ -341,34 +247,43 @@ with tab_luce:
         if fattore_moltiplicativo_luce > 1.0:
             st.caption(f"🔄 Consumo stimato su base annua: **{luce_consumo:,.0f} kWh/anno**")
         
+        st.markdown("---")
+        st.markdown("💶 **Quota Fissa in Bolletta**")
         if modo_calcolo_luce == "Singola Bolletta (Periodo)":
-            st.caption("💡 *Nota: Se inserisci la quota fissa mensile/bimestrale, ricorda che verrà moltiplicata per 12 (o rapportata all'anno) per il calcolo della comparazione annuale.*")
+            st.caption(f"💡 *Inserisci la quota fissa così come la leggi nella bolletta {'mensile' if periodo_luce == '1 Mese' else 'bimestrale'}. L'app la convertirà automaticamente in totale annuo.*")
         else:
-            st.caption("💡 *Inserisci la quota fissa totale su base annua.*")
+            st.caption("💡 *Inserisci la quota fissa mensile indicata in bolletta (verrà moltiplicata per 12).*")
 
-        luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="l_cf_in")
-        luce_curr_fixed = luce_curr_fixed_input * fattore_moltiplicativo_luce
+        luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="l_cf_in", help="Inserisci il valore mensile.")
+        # Moltiplichiamo sempre per 12 la quota inserita dall'utente per portarla su base annua omogenea
+        luce_curr_fixed = luce_curr_fixed_input * 12.0
         
         luce_curr_var = st.number_input("Costo Materia Prima Attuale (€/kWh)", format="%.4f", key="l_cv_curr")
         
     with col_l2:
         st.markdown(f"#### ⚡ Offerta Futuro Semplice")
-        scelta_offerta_luce = st.selectbox("Seleziona l'offerta da confrontare", offerte_luce_disponibili, key="sel_luce")
-        
-        luce_offer_fixed = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["quota_fissa"]
-        luce_offer_var = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["materia_prima"]
-        luce_durata_str = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["durata"]
-        
-        st.metric(label="Quota Fissa Offerta", value=f"{luce_offer_fixed:.2f} €/anno")
-        st.metric(label="Materia Prima Offerta", value=f"{luce_offer_var:.4f} €/kWh")
-        st.info(f"⏳ **Durata:** {luce_durata_str}")
-        
-        if OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["ha_oneri_recesso"]:
-            st.warning("⚠️ Condizioni a prezzo fisso con eventuali oneri di recesso anticipato.")
+        if offerte_luce_disponibili:
+            scelta_offerta_luce = st.selectbox("Seleziona l'offerta da confrontare", offerte_luce_disponibili, key="sel_luce")
+            
+            luce_offer_fixed = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["quota_fissa_annua"]
+            luce_offer_var = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["materia_prima"]
+            luce_durata_str = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["durata"]
+            
+            st.metric(label="Quota Fissa Offerta (Annua)", value=f"{luce_offer_fixed:.2f} €/anno")
+            st.metric(label="Materia Prima Offerta", value=f"{luce_offer_var:.4f} €/kWh")
+            st.info(f"⏳ **Durata:** {luce_durata_str}")
+            
+            if OFFERTE_CATALOGO[cat_attivo][scelta_offerta_luce]["ha_oneri_recesso"]:
+                st.warning("⚠️ Condizioni a prezzo fisso con eventuali oneri di recesso anticipato.")
+            else:
+                st.success("✅ Nessun onere di recesso previsto.")
         else:
-            st.success("✅ Nessun onere di recesso previsto.")
+            st.error("Nessuna offerta luce trovata nel file Excel per questo segmento.")
+            scelta_offerta_luce = ""
+            luce_offer_fixed = 0.0
+            luce_offer_var = 0.0
 
-    dati_luce_completi = (consumo_input_luce > 0) and (luce_curr_fixed_input > 0) and (luce_curr_var > 0)
+    dati_luce_completi = (consumo_input_luce > 0) and (luce_curr_fixed_input > 0) and (luce_curr_var > 0) and bool(offerte_luce_disponibili)
 
     if dati_luce_completi:
         spesa_curr_luce = luce_curr_fixed + (luce_consumo * luce_curr_var)
@@ -386,7 +301,7 @@ with tab_luce:
         spesa_curr_luce = 0.0
         spesa_off_luce = 0.0
         risparmio_luce = 0.0
-        st.caption("ℹ️ Inserisci i tre campi della bolletta (Consumo, Quota Fissa e Costo Materia Prima) per visualizzare l'analisi dettagliata.")
+        st.caption("ℹ️ Inserisci i dati della bolletta (Consumo, Quota Fissa mensile e Costo Materia Prima) per visualizzare l'analisi dettagliata.")
 
 # ==================== SEZIONE GAS ====================
 with tab_gas:
@@ -413,13 +328,15 @@ with tab_gas:
             if fattore_moltiplicativo_gas > 1.0:
                 st.caption(f"🔄 Consumo stimato su base annua: **{gas_consumo:,.0f} Smc/anno**")
             
+            st.markdown("---")
+            st.markdown("💶 **Quota Fissa in Bolletta**")
             if modo_calcolo_gas == "Singola Bolletta (Periodo)":
-                st.caption("💡 *Nota: Se inserisci la quota fissa mensile/bimestrale, ricorda che verrà moltiplicata per 12 (o rapportata all'anno) per il calcolo della comparazione annuale.*")
+                st.caption(f"💡 *Inserisci la quota fissa così come la leggi nella bolletta {'mensile' if periodo_gas == '1 Mese' else 'bimestrale'}. L'app la convertirà automaticamente in totale annuo.*")
             else:
-                st.caption("💡 *Inserisci la quota fissa totale su base annua.*")
+                st.caption("💡 *Inserisci la quota fissa mensile indicata in bolletta (verrà moltiplicata per 12).*")
 
-            gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="g_cf_in")
-            gas_curr_fixed = gas_curr_fixed_input * fattore_moltiplicativo_gas
+            gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="g_cf_in", help="Inserisci il valore mensile.")
+            gas_curr_fixed = gas_curr_fixed_input * 12.0
             
             gas_curr_var = st.number_input("Costo Materia Prima Attuale (€/Smc)", format="%.3f", key="g_cv_curr")
         else:
@@ -434,15 +351,15 @@ with tab_gas:
         st.markdown(f"#### 🔥 Offerta Futuro Semplice")
         if offerte_gas_disponibili:
             scelta_offerta_gas = st.selectbox("Seleziona l'offerta da confrontare", offerte_gas_disponibili, key="sel_gas")
-            gas_offer_fixed = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["quota_fissa"]
+            gas_offer_fixed = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["quota_fissa_annua"]
             gas_offer_var = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["materia_prima"]
             gas_durata_str = OFFERTE_CATALOGO[cat_attivo][scelta_offerta_gas]["durata"]
             
-            st.metric(label="Quota Fissa Offerta", value=f"{gas_offer_fixed:.2f} €/anno")
+            st.metric(label="Quota Fissa Offerta (Annua)", value=f"{gas_offer_fixed:.2f} €/anno")
             st.metric(label="Materia Prima Offerta", value=f"{gas_offer_var:.3f} €/Smc")
             st.info(f"⏳ **Durata:** {gas_durata_str}")
         else:
-            st.info("Nessuna offerta gas disponibile al momento per questo segmento.")
+            st.info("Nessuna offerta gas disponibile nel file Excel per questo segmento.")
             scelta_offerta_gas = ""
             gas_offer_fixed = 0.0
             gas_offer_var = 0.0
@@ -466,7 +383,7 @@ with tab_gas:
         spesa_off_gas = 0.0
         risparmio_gas = 0.0
         if offerte_gas_disponibili:
-            st.caption("ℹ️ Inserisci i tre campi della bolletta Gas (Consumo, Quota Fissa e Costo Materia Prima) per visualizzare l'analisi.")
+            st.caption("ℹ️ Inserisci i dati della bolletta Gas (Consumo, Quota Fissa mensile e Costo Materia Prima) per visualizzare l'analisi.")
 
 # ==================== RIEPILOGO & DOWNLOAD PDF ====================
 ha_dati_utili = (dati_luce_completi or dati_gas_completi)
@@ -557,7 +474,6 @@ if ha_dati_utili:
         )
 
     with col_wa:
-        # Messaggio WhatsApp aggiornato con il dettaglio delle offerte scelte
         dettaglio_offerte_wa = ""
         if ha_luce:
             dettaglio_offerte_wa += f"\n- Luce: {scelta_offerta_luce}"
