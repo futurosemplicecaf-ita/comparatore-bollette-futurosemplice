@@ -51,7 +51,6 @@ st.markdown("""
 def carica_offerte_excel():
     excel_path = "offerte_energia.xlsx"
     if not os.path.exists(excel_path):
-        # Se il file non esiste, creiamo un Excel di esempio in automatico per evitare crash
         df_default = pd.DataFrame([
             {"Segmento": "Residenziale", "Tipo": "Luce", "NomeOfferta": "Luce - SEV SUPER LUCE FIX", "QuotaFissaMensile": 12.99, "MateriaPrima": 0.178, "HaOneriRecesso": "NO", "Durata": "Prezzo fisso garantito per 24 mesi"},
             {"Segmento": "Residenziale", "Tipo": "Gas", "NomeOfferta": "Gas - SEV SUPER GAS FIX", "QuotaFissaMensile": 12.00, "MateriaPrima": 0.820, "HaOneriRecesso": "NO", "Durata": "Prezzo fisso garantito per 24 mesi"},
@@ -62,14 +61,13 @@ def carica_offerte_excel():
     
     df = pd.read_excel(excel_path)
     
-    # Convertiamo in un dizionario strutturato simile al precedente
     catalogo = {"Residenziale": {}, "Business": {}}
     for _, row in df.iterrows():
         seg = row["Segmento"]
-        nome_completo = f"{row['Tipo']} - {row['NomeOfferta']}" if not row['NomeOfferta'].startswith(row['Tipo']) else row['NomeOfferta']
+        nome_completo = f"{row['Tipo']} - {row['NomeOfferta']}" if not row['NomeOfferta'].startswith(str(row['Tipo'])) else str(row['NomeOfferta'])
         if seg in catalogo:
             catalogo[seg][nome_completo] = {
-                "quota_fissa_annua": float(row["QuotaFissaMensile"]) * 12, # Convertiamo la quota mensile inserita in Excel in base annua
+                "quota_fissa_annua": float(row["QuotaFissaMensile"]) * 12,
                 "materia_prima": float(row["MateriaPrima"]),
                 "ha_oneri_recesso": str(row["HaOneriRecesso"]).strip().upper() == "SI",
                 "durata": str(row["Durata"])
@@ -179,7 +177,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("💡 **Come funziona:**")
     st.markdown("1. Scegli se sei Casa o Business.")
-    st.markdown("2. Inserisci i dati della bolletta (quota fissa mensile).")
+    st.markdown("2. Seleziona la modalità di inserimento e inserisci i dati.")
     st.markdown("3. Scopri l'analisi, scarica il PDF o contattaci su WhatsApp.")
 
 # --- HERO BANNER ---
@@ -230,10 +228,19 @@ with tab_luce:
     col_l1, col_l2 = st.columns(2)
     with col_l1:
         st.markdown("#### 📄 Dati della tua Bolletta Luce")
+        
+        # Box in evidenza per la scelta della modalità
+        st.markdown("""
+            <div style="background-color: #f1f5f9; padding: 12px; border-radius: 10px; border-left: 4px solid #0091DA; margin-bottom: 12px;">
+                <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 13px;">1️⃣ Scegli la modalità di inserimento:</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
         modo_calcolo_luce = st.radio(
             "Modalità di inserimento consumo Luce:",
             ["Consumo Annuo (Ultimi 12 mesi)", "Singola Bolletta (Periodo)"],
-            key="modo_luce"
+            key="modo_luce",
+            label_visibility="collapsed"
         )
         
         if modo_calcolo_luce == "Singola Bolletta (Periodo)":
@@ -248,15 +255,15 @@ with tab_luce:
             st.caption(f"🔄 Consumo stimato su base annua: **{luce_consumo:,.0f} kWh/anno**")
         
         st.markdown("---")
-        st.markdown("💶 **Quota Fissa in Bolletta**")
         if modo_calcolo_luce == "Singola Bolletta (Periodo)":
-            st.caption(f"💡 *Inserisci la quota fissa così come la leggi nella bolletta {'mensile' if periodo_luce == '1 Mese' else 'bimestrale'}. L'app la convertirà automaticamente in totale annuo.*")
+            st.markdown(f"💶 **Quota Fissa ({'Mensile' if periodo_luce == '1 Mese' else 'Bimestrale'})**")
+            st.caption(f"💡 Inserisci l'importo fisso così come lo leggi nella bolletta {'mensile' if periodo_luce == '1 Mese' else 'bimestrale'}. L'app lo trasformerà in totale annuo.")
         else:
-            st.caption("💡 *Inserisci la quota fissa mensile indicata in bolletta (verrà moltiplicata per 12).*")
+            st.markdown("💶 **Quota Fissa (Annua)**")
+            st.caption("💡 Inserisci il totale della quota fissa su base annua.")
 
-        luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="l_cf_in", help="Inserisci il valore mensile.")
-        # Moltiplichiamo sempre per 12 la quota inserita dall'utente per portarla su base annua omogenea
-        luce_curr_fixed = luce_curr_fixed_input * 12.0
+        luce_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="l_cf_in")
+        luce_curr_fixed = luce_curr_fixed_input * 12.0 if modo_calcolo_luce == "Singola Bolletta (Periodo)" else luce_curr_fixed_input
         
         luce_curr_var = st.number_input("Costo Materia Prima Attuale (€/kWh)", format="%.4f", key="l_cv_curr")
         
@@ -301,7 +308,7 @@ with tab_luce:
         spesa_curr_luce = 0.0
         spesa_off_luce = 0.0
         risparmio_luce = 0.0
-        st.caption("ℹ️ Inserisci i dati della bolletta (Consumo, Quota Fissa mensile e Costo Materia Prima) per visualizzare l'analisi dettagliata.")
+        st.caption("ℹ️ Inserisci i dati della bolletta (Consumo, Quota Fissa e Costo Materia Prima) per visualizzare l'analisi dettagliata.")
 
 # ==================== SEZIONE GAS ====================
 with tab_gas:
@@ -312,10 +319,18 @@ with tab_gas:
     with col_g1:
         st.markdown("#### 📄 Dati della tua Bolletta Gas")
         if offerte_gas_disponibili:
+            # Box in evidenza per la scelta della modalità Gas
+            st.markdown("""
+                <div style="background-color: #f1f5f9; padding: 12px; border-radius: 10px; border-left: 4px solid #0091DA; margin-bottom: 12px;">
+                    <p style="margin: 0; font-weight: 700; color: #0f172a; font-size: 13px;">1️⃣ Scegli la modalità di inserimento:</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
             modo_calcolo_gas = st.radio(
                 "Modalità di inserimento consumo Gas:",
                 ["Consumo Annuo (Ultimi 12 mesi)", "Singola Bolletta (Periodo)"],
-                key="modo_gas"
+                key="modo_gas",
+                label_visibility="collapsed"
             )
             if modo_calcolo_gas == "Singola Bolletta (Periodo)":
                 periodo_gas = st.selectbox("A che periodo si riferisce la bolletta?", ["1 Mese", "2 Mesi (Bimestrale)"], key="per_gas")
@@ -329,14 +344,15 @@ with tab_gas:
                 st.caption(f"🔄 Consumo stimato su base annua: **{gas_consumo:,.0f} Smc/anno**")
             
             st.markdown("---")
-            st.markdown("💶 **Quota Fissa in Bolletta**")
             if modo_calcolo_gas == "Singola Bolletta (Periodo)":
-                st.caption(f"💡 *Inserisci la quota fissa così come la leggi nella bolletta {'mensile' if periodo_gas == '1 Mese' else 'bimestrale'}. L'app la convertirà automaticamente in totale annuo.*")
+                st.markdown(f"💶 **Quota Fissa ({'Mensile' if periodo_gas == '1 Mese' else 'Bimestrale'})**")
+                st.caption(f"💡 Inserisci l'importo fisso così come lo leggi nella bolletta {'mensile' if periodo_gas == '1 Mese' else 'bimestrale'}. L'app lo trasformerà in totale annuo.")
             else:
-                st.caption("💡 *Inserisci la quota fissa mensile indicata in bolletta (verrà moltiplicata per 12).*")
+                st.markdown("💶 **Quota Fissa (Annua)**")
+                st.caption("💡 Inserisci il totale della quota fissa su base annua.")
 
-            gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="g_cf_in", help="Inserisci il valore mensile.")
-            gas_curr_fixed = gas_curr_fixed_input * 12.0
+            gas_curr_fixed_input = st.number_input("Quota Fissa (€)", step=1.0, key="g_cf_in")
+            gas_curr_fixed = gas_curr_fixed_input * 12.0 if modo_calcolo_gas == "Singola Bolletta (Periodo)" else gas_curr_fixed_input
             
             gas_curr_var = st.number_input("Costo Materia Prima Attuale (€/Smc)", format="%.3f", key="g_cv_curr")
         else:
@@ -383,7 +399,7 @@ with tab_gas:
         spesa_off_gas = 0.0
         risparmio_gas = 0.0
         if offerte_gas_disponibili:
-            st.caption("ℹ️ Inserisci i dati della bolletta Gas (Consumo, Quota Fissa mensile e Costo Materia Prima) per visualizzare l'analisi.")
+            st.caption("ℹ️ Inserisci i dati della bolletta Gas (Consumo, Quota Fissa e Costo Materia Prima) per visualizzare l'analisi.")
 
 # ==================== RIEPILOGO & DOWNLOAD PDF ====================
 ha_dati_utili = (dati_luce_completi or dati_gas_completi)
