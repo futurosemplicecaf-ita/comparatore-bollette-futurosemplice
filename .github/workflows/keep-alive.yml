@@ -10,17 +10,36 @@ jobs:
   wake-up:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Streamlit App
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright
         run: |
-          APP_URL="https://comparatore-bollette-futurosemplice-92ffj8el3bxenpzlx2tre2.streamlit.app/"
-          
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$APP_URL")
-          echo "HTTP Status Received: $HTTP_STATUS"
-          
-          # Aggiunto il codice 303 tra quelli considerati corretti
-          if [ "$HTTP_STATUS" -eq 200 ] || [ "$HTTP_STATUS" -eq 302 ] || [ "$HTTP_STATUS" -eq 303 ]; then
-            echo "App reached successfully!"
-          else
-            echo "Warning: Received HTTP status $HTTP_STATUS"
-            exit 1
-          fi
+          pip install playwright
+          playwright install chromium
+
+      - name: Wake up Streamlit App
+        run: |
+          python -c "
+          from playwright.sync_api import sync_playwright
+
+          url = 'https://comparatore-bollette-futurosemplice-92ffj8el3bxenpzlx2tre2.streamlit.app/'
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True)
+              page = browser.new_page()
+              page.goto(url, wait_until='networkidle', timeout=60000)
+              page.wait_for_timeout(5000)
+
+              wake_button = page.get_by_role('button', name='Yes, get this app back up!')
+              if wake_button.is_visible():
+                  print('App in standby rilevata. Clicco il pulsante di risveglio...')
+                  wake_button.click()
+                  page.wait_for_timeout(15000)
+                  print('Pulsante cliccato con successo!')
+              else:
+                  print('App gia attiva!')
+
+              browser.close()
+          "
