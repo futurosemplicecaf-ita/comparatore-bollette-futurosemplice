@@ -63,8 +63,10 @@ def carica_offerte_excel():
     
     catalogo = {"Residenziale": {}, "Business": {}}
     for _, row in df.iterrows():
-        seg = row["Segmento"]
-        nome_completo = f"{row['Tipo']} - {row['NomeOfferta']}" if not row['NomeOfferta'].startswith(str(row['Tipo'])) else str(row['NomeOfferta'])
+        seg = str(row["Segmento"]).strip()
+        tipo = str(row["Tipo"]).strip()
+        nome_off = str(row["NomeOfferta"]).strip()
+        nome_completo = f"{tipo} - {nome_off}" if not nome_off.startswith(tipo) else nome_off
         if seg in catalogo:
             catalogo[seg][nome_completo] = {
                 "quota_fissa_annua": float(row["QuotaFissaMensile"]) * 12,
@@ -89,10 +91,22 @@ if "modo_luce" not in st.session_state:
     st.session_state.modo_luce = "Consumo Annuo (Ultimi 12 mesi)"
 if "per_luce" not in st.session_state:
     st.session_state.per_luce = "1 Mese"
+if "l_cons_in" not in st.session_state:
+    st.session_state.l_cons_in = 0.0
+if "l_cf_in" not in st.session_state:
+    st.session_state.l_cf_in = 0.0
+if "l_cv_curr" not in st.session_state:
+    st.session_state.l_cv_curr = 0.0
 if "modo_gas" not in st.session_state:
     st.session_state.modo_gas = "Consumo Annuo (Ultimi 12 mesi)"
 if "per_gas" not in st.session_state:
     st.session_state.per_gas = "1 Mese"
+if "g_cons_in" not in st.session_state:
+    st.session_state.g_cons_in = 0.0
+if "g_cf_in" not in st.session_state:
+    st.session_state.g_cf_in = 0.0
+if "g_cv_curr" not in st.session_state:
+    st.session_state.g_cv_curr = 0.0
 
 # --- FUNZIONE PER GENERARE IL PDF CON IL LOGO ---
 def genera_pdf_preventivo(nome_cliente, dati_riepilogo, testo_contatti, titolo_doc, tipo_cliente):
@@ -177,7 +191,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("💡 **Come funziona:**")
     st.markdown("1. Scegli se sei Casa o Business.")
-    st.markdown("2. Seleziona la modalità di inserimento e inserisci i dati.")
+    st.markdown("2. Seleziona la modalità di inserimento e compila i dati.")
     st.markdown("3. Scopri l'analisi, scarica il PDF o contattaci su WhatsApp.")
 
 # --- HERO BANNER ---
@@ -508,8 +522,14 @@ if ha_dati_utili:
 
     with col_reset:
         if st.button("🔄 Reset"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+            st.session_state.client_name = ""
+            st.session_state.client_piva = ""
+            st.session_state.l_cons_in = 0.0
+            st.session_state.l_cf_in = 0.0
+            st.session_state.l_cv_curr = 0.0
+            st.session_state.g_cons_in = 0.0
+            st.session_state.g_cf_in = 0.0
+            st.session_state.g_cv_curr = 0.0
             st.rerun()
 
     with col_esci:
@@ -522,8 +542,14 @@ else:
     col_res, col_esc = st.columns([1, 1])
     with col_res:
         if st.button("🔄 Reset Campi"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
+            st.session_state.client_name = ""
+            st.session_state.client_piva = ""
+            st.session_state.l_cons_in = 0.0
+            st.session_state.l_cf_in = 0.0
+            st.session_state.l_cv_curr = 0.0
+            st.session_state.g_cons_in = 0.0
+            st.session_state.g_cf_in = 0.0
+            st.session_state.g_cv_curr = 0.0
             st.rerun()
     with col_esc:
         st.markdown(
